@@ -25,14 +25,17 @@ func main() {
 			getRoomList()
 		case "2":
 			addRoom()
+		case "3":
+			reserveRoom()
 
 		}
+
 	}
 }
 
 func getRoomList() {
 	for _, value := range rooms {
-		fmt.Printf("ID:%d,  Bed Count:%d,  Type:%s,  Price:%.2f\n", value.ID, value.BedCount, value.Type, value.Price)
+		fmt.Printf("ID:%d,  Bed Count:%d, Status:%v,  Type:%s,  Price:%.2f\n", value.ID, value.BedCount, value.Status, value.Type, value.Price)
 	}
 }
 
@@ -45,6 +48,68 @@ func getRoomFormInput() Room {
 	fmt.Scanln(&room.Price)
 
 	return room
+}
+
+func reserveRoom() {
+	id := 0
+	nights := 0
+	personCount := 0
+	fmt.Println("Enter the room ID")
+	fmt.Scanln(&id)
+	var room = getRoom(id)
+	if room != nil {
+		if room.Status {
+			fmt.Println("Room is reserved")
+		} else if room.Status == false {
+			fmt.Println("Enter reserve information line by line (nights, personCount)")
+			fmt.Scanln(&nights)
+			fmt.Scanln(&personCount)
+			roomPrice, tax, discountAmount, finalPrice := calculateRoomPrice(*room, nights, personCount)
+			room.Status = true
+
+			fmt.Printf("Room price: %f, tax: %f, discount: %f, final price: %f \n", roomPrice, tax, discountAmount, finalPrice)
+		}
+	} else {
+		fmt.Println("Room not found")
+	}
+
+}
+
+func calculateRoomPrice(room Room, nights int, personCount int) (roomPrice float64, tax float64, discountAmount float64, finalPrice float64) {
+
+	discountPercentage := 0.0
+	if nights >= 7 && nights <= 15 {
+		discountPercentage = 0.1
+	} else if nights >= 15 && nights <= 30 {
+		discountPercentage = 0.15
+	} else if nights > 30 {
+		discountPercentage = 0.2
+	}
+	switch room.Type {
+	case "single":
+		roomPrice = float64(nights) * room.Price * float64(personCount) * 1.0
+	case "double":
+		roomPrice = float64(nights) * room.Price * float64(personCount) * 1.2
+	case "standard":
+		roomPrice = float64(nights) * room.Price * float64(personCount) * 1.3
+	case "suite":
+		roomPrice = float64(nights) * room.Price * float64(personCount) * 1.5
+	}
+
+	tax = roomPrice * 0.09
+	discountAmount = roomPrice * discountPercentage
+	finalPrice = roomPrice + tax - discountAmount
+
+	return
+}
+
+func getRoom(id int) *Room {
+	for i := 0; i < len(rooms); i++ {
+		if rooms[i].ID == id {
+			return &rooms[i]
+		}
+	}
+	return nil
 }
 
 func addRoom() {
